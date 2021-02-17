@@ -1,0 +1,207 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  fig.align = "center",
+  fig.height = 3
+)
+```
+
+# meteostatR
+
+<!-- badges: start -->
+`r badger::badge_devel("jmartindelasierra/meteostatR", "blue")`
+<!-- badges: end -->
+
+This package provides a set of functions to retrieve historical weather data from [Meteostat](https://meteostat.net), a free online weather and climate service, by connecting to its JSON API.
+
+I encourage you to visit [Meteostat](https://meteostat.net) and, especially, the developer's [site](https://dev.meteostat.net/). Please, be sure you understand the [terms and license](https://dev.meteostat.net/docs/terms.html) before continue.
+
+## Installation
+
+You can install this package as follows:
+
+```{r eval=FALSE}
+devtools::install_github("jmartindelasierra/meteostatR")
+```
+
+## Preparation
+
+Before using the package, this requires an entry in your `.Renviron` file to store your Meteostat API key.
+
+You can obtain your key from the Meteostat developer's [site](https://dev.meteostat.net/). Once received, edit your `.Renviron` file with `usethis::edit_r_environ()` by adding the following line:
+
+`METEOSTAT_KEY = your_key`
+
+Remember not to use quotes for your key string.
+
+Next you must restart R to take effect and finally check your key was recorded:
+
+```{r eval=FALSE}
+Sys.getenv("METEOSTAT_KEY")
+```
+
+## Functions
+
+This is the set of functions provided in the package:
+
+- find_stations()
+
+    Returns weather stations by the indicated string.
+
+- nearby_stations()
+
+    Returns weather stations nearby the indicated geolocation.
+
+- metadata_station()
+
+    Returns meta data for the indicated weather station.
+
+- hourly_data()
+
+    Returns hourly weather data from the indicated weather station.
+
+- point_hourly_data()
+
+    Returns hourly weather data from the indicated geolocation by means of interpolation.
+
+- daily_data()
+
+    Returns daily weather data from the indicated station.
+
+- point_daily_data()
+
+    Returns daily weather data from the indicated geolocation by means of interpolation.
+
+- climate_normals()
+
+    Returns long-term weather averages from the indicated station.
+
+- point_climate_normals()
+
+    Returns long-term weather averages from the indicated geolocation by means of interpolation.
+
+Get more about the return values visiting the Meteostat [API](https://dev.meteostat.net/api/) documentation.
+
+## Example
+
+```{r include=FALSE}
+# Save current locale
+system_locale <- Sys.getlocale(category = "LC_TIME")
+
+# Set time locale to english
+Sys.setlocale(category = "LC_TIME", locale = "en_US.UTF-8")
+```
+
+Let's show how to use some functions with an example.
+
+We start by attaching the required packages:
+
+```{r message=FALSE, warning=FALSE}
+# This package
+library(meteostatR)
+
+# Other packages for data manipulation and graphics
+library(dplyr)
+library(ggplot2)
+```
+
+We look for stations located in Barcelona:
+
+```{r}
+# Find stations including "barcelona"
+stations <- find_stations("barcelona")
+```
+
+```{r}
+# Look at the returned data
+stations$data
+```
+
+By filtering the stations in Spain, we see that only one is active right now:
+
+```{r}
+# Filter by country of interest
+stations$data %>%
+  filter(country == "ES") %>%
+  select(id, name, latitude, longitude, active)
+```
+
+We keep such station and retrieve some hourly data:
+
+```{r}
+# Save station of interest
+my_station <- "08181"
+```
+
+```{r}
+# Retrieve hourly data
+hourly <- hourly_data(station = my_station, 
+                      start = "2021-02-01", 
+                      end = "2021-02-10")
+```
+
+Let's see what features we obtained:
+
+```{r}
+# Variables in data
+hourly$data %>% 
+  glimpse()
+```
+
+We may want to plot some data:
+
+```{r}
+# Plot pressure
+hourly$data %>% 
+  ggplot(aes(x = time, y = pres)) + 
+  geom_line(color = "steelblue") + 
+  theme_bw() +
+  labs(x = NULL)
+```
+
+Now we're going to retrieve daily data for 2020 and plot the average temperature:
+
+```{r}
+# Retrieve daily data
+daily <- daily_data(station = my_station, 
+                    start = "2020-01-01", 
+                    end = "2020-12-31")
+```
+
+```{r}
+# Variables in data
+daily$data %>%
+    glimpse()
+```
+
+```{r}
+# Plot the average temperature with minimum and maximum ribbon
+daily$data %>%
+  ggplot(aes(x = date)) + 
+  geom_ribbon(aes(ymin = tmin, ymax = tmax), fill = "steelblue", alpha = 0.2) + 
+  geom_line(aes(y = tavg), color = "steelblue") + 
+  theme_bw() + 
+  labs(x = NULL, y = "temp")
+```
+
+```{r include=FALSE}
+Sys.setlocale(category = "LC_TIME", locale = system_locale)
+```
+
+## Quota
+
+Free access to the Meteostat API is limited to 2,000 requests per day and no more than two requests per second.
+
+## Attributions
+
+meteostatR: [Jesús Martín de la Sierra](https://github.com/jmartindelasierra).
+
+Source: [Meteostat](https://meteostat.net). Raw data provided by [NOAA](https://www.noaa.gov/), [DWD](https://www.dwd.de/) and [others](https://dev.meteostat.net/docs/sources.html).

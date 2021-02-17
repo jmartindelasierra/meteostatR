@@ -1,0 +1,14 @@
+Package: meteostatR
+Type: Package
+Title: Historical weather data from Meteostat
+Version: 0.0.0.9000
+Author: Jesus Martin de la Sierra
+Maintainer: Jesus Martin de la Sierra <jesus.martinsierra@gmail.com>
+Description: This package provides a set of functions to retrieve
+    historical weather data from Meteostat, a free online weather
+    and climate service.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
+Imports: dplyr, jsonlite, lubridate, RCurl, rlang, stringr
